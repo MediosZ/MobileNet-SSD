@@ -314,7 +314,10 @@ int main(int argc, char** argv) {
         exit(1);
     }
     //CHECK(!img.empty()) << "Unable to decode image " << file;
+    double time = (double)getTickCount();
     std::vector<vector<float> > detections = detector.Detect(img);
+    double time_elpased = ((double)getTickCount() - time) / getTickFrequency();
+    std::cout<<"time spend: "<<time_elpased<<std::endl; 
     /* Print the detection results. */
     for (int i = 0; i < detections.size(); ++i) {
       const vector<float>& d = detections[i];

@@ -23,6 +23,7 @@ int main(int argc, char **argv)
     
     String imageFile = (argc > 1) ? argv[1] : "space_shuttle.jpg";
     Net net = dnn::readNetFromCaffe(modelTxt, modelBin);
+    net.setPreferableTarget(1);
     if (net.empty())
     {
         std::cerr << "Can't load network by using the following files: " << std::endl;
@@ -40,10 +41,12 @@ int main(int argc, char **argv)
     Mat img2;
     resize(img, img2, Size(300,300));
     Mat inputBlob = blobFromImage(img2, 0.007843, Size(300,300), Scalar(127.5, 127.5, 127.5), false);
-
     net.setInput(inputBlob, "data");
-    Mat detection = net.forward("detection_out");
+    double time = (double)getTickCount();
+    Mat detection = net.forward("detection_out"); 
     Mat detectionMat(detection.size[2], detection.size[3], CV_32F, detection.ptr<float>());
+    double time_elpased = ((double)getTickCount() - time) / getTickFrequency();
+    std::cout<<"time spend: "<<time_elpased<<std::endl;  
 
     ostringstream ss;
     float confidenceThreshold = 0.2;
