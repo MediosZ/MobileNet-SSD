@@ -13,11 +13,11 @@
 //    folder/video2.mp4
 //
 #include <caffe/caffe.hpp>
-
+#include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/core/utils/trace.hpp>
+
 #include <algorithm>
 #include <iomanip>
 #include <iosfwd>
@@ -25,9 +25,8 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <sstream>
 
-
+using namespace cv;
 using namespace caffe;  // NOLINT(build/namespaces)
 
 class Detector {
@@ -300,50 +299,48 @@ int main(int argc, char** argv) {
     }
   }
   std::ostream out(buf);
-  ostringstream ss;
 
   // Process image one by one.
-  std::ifstream infile(argv[3]);
   std::cout<<"start reading files"<<std::endl;
   std::string file = argv[3];
   std::cout<<"reading filename succeed"<<std::endl;
-  cv::Mat img = cv::imread(file, -1);
+  VideoCapture video(file);
+  cv::Mat img;
 
-  CHECK(!img.empty()) << "Unable to decode image " << file;
-  std::vector<vector<float> > detections = detector.Detect(img);
-  /* Print the detection results. */
-  for (int i = 0; i < detections.size(); ++i) {
-    const vector<float>& d = detections[i];
-    // Detection format: [image_id, label, score, xmin, ymin, xmax, ymax].
-    CHECK_EQ(d.size(), 7);
-    const float score = d[2];
-    if (score >= confidence_threshold) {
-      out << file << " ";
-      out << static_cast<int>(d[1]) << " ";
-      out << score << " ";
-      out << static_cast<int>(d[3] * img.cols) << " ";
-      out << static_cast<int>(d[4] * img.rows) << " ";
-      out << static_cast<int>(d[5] * img.cols) << " ";
-      out << static_cast<int>(d[6] * img.rows) << std::endl;
-      cv::Rect box(static_cast<int>(d[3] * img.cols), static_cast<int>(d[4] * img.rows),
-            (static_cast<int>(d[5] * img.cols) - static_cast<int>(d[3] * img.cols)),
-            (static_cast<int>(d[6] * img.rows) - static_cast<int>(d[4] * img.rows)));
-      rectangle(img, box, cv::Scalar(0, 0, 255), 2);
-      ss.str("");
-      ss << score;
-      cv::String conf(ss.str());
-      cv::String label = static_cast<int>(d[1]) + ": " + conf;
-      int baseLine = 0;
-      cv::Size labelSize = getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
-      putText(img, label, cv::Point(static_cast<int>(d[3] * img.cols), static_cast<int>(d[4] * img.rows)),
-              0, 0.5, cv::Scalar(0,0,255));
+  while(1){
+    video>>img;
+    if (img.empty()){
+        std::cerr << "Video is over " << file << std::endl;
+        exit(1);
+    }
+    //CHECK(!img.empty()) << "Unable to decode image " << file;
+    std::vector<vector<float> > detections = detector.Detect(img);
+    /* Print the detection results. */
+    for (int i = 0; i < detections.size(); ++i) {
+      const vector<float>& d = detections[i];
+      // Detection format: [image_id, label, score, xmin, ymin, xmax, ymax].
+      CHECK_EQ(d.size(), 7);
+      const float score = d[2];
+      if (score >= confidence_threshold) {
+        out << file << " ";
+        out << static_cast<int>(d[1]) << " ";
+        out << score << " ";
+        out << static_cast<int>(d[3] * img.cols) << " ";
+        out << static_cast<int>(d[4] * img.rows) << " ";
+        out << static_cast<int>(d[5] * img.cols) << " ";
+        out << static_cast<int>(d[6] * img.rows) << std::endl;
+        Rect box(static_cast<int>(d[3] * img.cols), static_cast<int>(d[4] * img.rows),
+                    (static_cast<int>(d[5] * img.cols) - static_cast<int>(d[3] * img.cols)),
+                    (static_cast<int>(d[6] * img.rows) - static_cast<int>(d[4] * img.rows)));
+        rectangle(img, box, Scalar(0, 0, 255), 2);
 
-      cv::imshow("Detection", img);
-      cv::waitKey();
-
+      }
+    }
+    imshow("detections", img);
+    if(waitKey(1)=='q'){
+      exit(1);
     }
   }
-
   return 0;
 }
 

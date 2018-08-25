@@ -34,7 +34,21 @@ target_link_libraries(ssd_detect caffe
 		gflags
 		protobuf)
 
+add_executable(ssd_video ssd_video.cpp)
+target_link_libraries(ssd_video caffe	
+		${OpenCV_LIBS}
+		boost_system 
+		boost_filesystem
+		glog
+		gflags
+		protobuf)
+
 add_executable(dnn opencv_dnn.cpp)
 target_link_libraries(dnn 
+		${OpenCV_LIBS}
+		)
+
+add_executable(video opencv_video.cpp)
+target_link_libraries(video
 		${OpenCV_LIBS}
 		)
